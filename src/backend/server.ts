@@ -1,5 +1,6 @@
 import express from "express"
 import { podPool } from "../k8s/pod-pool"
+import { orchestrator } from "./orchestrator"
 
 const app = express()
 app.use(express.json())
@@ -8,11 +9,11 @@ app.use(express.json())
 // Students implement: store workflow, find ready steps, enqueue them
 app.post("/workflow", async (req, res) => {
   const workflow = req.body
-
-  // TODO: students implement this in orchestrator.ts
-  // Call orchestrator.submitWorkflow(workflow)
-  void workflow
-  res.status(501).json({ error: "Not implemented" })
+  await orchestrator.submitWorkflow(workflow);
+  res.status(200).json({
+    workflowId : workflow.workflowId,
+    status : "accepted"
+  })
 })
 
 // GET /workflow/:id

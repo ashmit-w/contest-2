@@ -1,9 +1,10 @@
-import type { Workflow } from "../types/workflow"
+import type { StepState, StepStatus, Workflow, WorkflowState, WorkflowStep } from "../types/workflow"
 import { getWorkflow, setWorkflow } from "./workflow-store"
 import { getReadySteps } from "./dag"
 import { stepQueue } from "../queue/step-queue"
 import { resultQueue } from "../queue/result-queue"
 import { podManager } from "../pod-manager/pod-manager"
+import { get } from "node:http"
 
 /**
  * TODO: Implement this class.
@@ -37,12 +38,43 @@ import { podManager } from "../pod-manager/pod-manager"
  */
 export class Orchestrator {
   async submitWorkflow(workflow: Workflow): Promise<void> {
-    void workflow
-    void getWorkflow
-    void setWorkflow
-    void getReadySteps
-    void stepQueue
-    throw new Error("TODO: implement submitWorkflow")
+    let s: Record<string, StepState> = {};
+    workflow.steps.forEach((k)=>{
+      s[k.id]= {
+          stepId: k.id,
+          status: "PENDING",
+          podId : null
+      }
+    })
+
+    setWorkflow(workflow.workflowId, {
+      workflowId : workflow.workflowId,
+      status : "pending",
+      steps : workflow.steps,
+      stepState : s
+    })
+
+    const status: Record<string,StepStatus> = {}
+
+    for(const key in getWorkflow(workflow.workflowId)?.stepState){
+      status[key] = getWorkflow(workflow.workflowId)?.stepState[key].status!;
+    }
+
+    let readysteps: WorkflowStep[] = getReadySteps(getWorkflow(workflow.workflowId)?.steps!, status);
+
+    readysteps.forEach((r)=>{
+      stepQueue.enqueue({
+        stepId: r.id,
+        workflowId: workflow.workflowId,
+        command: r.command,
+        enqueuedAt: Date.now()
+      })
+      const curr = getWorkflow(workflow.workflowId);
+      curr!.stepState[r.id].status = "QUEUED";
+      setWorkflow(workflow.workflowId,curr!);
+    })
+
+
   }
 
   async start(): Promise<void> {

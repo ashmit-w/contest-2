@@ -23,14 +23,14 @@ export class ResultQueue {
 
   async consume(handler: (result: StepResult) => Promise<void>): Promise<void> {
     const subscriber = redis.duplicate()
-
+    
     while (true) {
       const item = await subscriber.brpop(RESULT_QUEUE_KEY, 0)
       if (!item) continue
 
       const [, value] = item
       const result = parseStepResult(value)
-
+      
       // TODO: Students implement result handling in orchestrator.ts by passing a handler here.
       await handler(result)
     }
