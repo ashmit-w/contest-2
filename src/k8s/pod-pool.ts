@@ -6,6 +6,7 @@ const ACQUIRING_LEASE = "__acquiring__"
 const DEFAULT_NAMESPACE = "workflow-runner"
 const DEFAULT_LABEL_SELECTOR = "app=runner"
 const RUNNER_CONTAINER_NAME = "runner"
+const EXEC_API_TIMEOUT_MS = 1000
 
 interface MutableCluster {
   skipTLSVerify: boolean
@@ -74,6 +75,12 @@ function runKubectlExec(namespace: string, podName: string, command: string): st
   if (execProcess.exitCode !== 0) throw new Error(stderr || `Command exited with ${execProcess.exitCode}`)
 
   return stdout
+}
+
+function timeoutAfter(ms: number): Promise<never> {
+  return new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("KUBERNETES_EXEC_TIMEOUT")), ms)
+  })
 }
 
 export class PodPool {
@@ -151,18 +158,23 @@ export class PodPool {
     console.log(`📦 execInPod ${podName}: ${command}`)
 
     try {
-      await this.execClient.exec(
-        this.namespace,
-        podName,
-        RUNNER_CONTAINER_NAME,
-        ["sh", "-c", command],
-        createCaptureStream(stdoutChunks),
-        createCaptureStream(stderrChunks),
-        null,
-        false,
-        (status) => {
-          if (status.status !== "Success") statusError = getStatusMessage(status) || "Command failed"
-        },
+      await Promise.race(
+        [
+          this.execClient.exec(
+            this.namespace,
+            podName,
+            RUNNER_CONTAINER_NAME,
+            ["sh", "-c", command],
+            createCaptureStream(stdoutChunks),
+            createCaptureStream(stderrChunks),
+            null,
+            false,
+            (status) => {
+              if (status.status !== "Success") statusError = getStatusMessage(status) || "Command failed"
+            },
+          ),
+          timeoutAfter(EXEC_API_TIMEOUT_MS),
+        ]
       )
     } catch (error) {
       console.log(`⚠️ Kubernetes Exec API failed for ${podName}; falling back to kubectl exec`)

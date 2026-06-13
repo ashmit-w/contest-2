@@ -1,7 +1,10 @@
 import type { StepResult } from "../types/workflow"
 import { redis } from "./redis-client"
 
-const RESULT_QUEUE_KEY = "workflow:result-queue"
+const QUEUE_NAMESPACE = process.env.REDIS_QUEUE_PREFIX || `workflow:${process.pid}`
+const RESULT_QUEUE_KEY = `${QUEUE_NAMESPACE}:result-queue`
+
+console.log(`📚 Result queue key: ${RESULT_QUEUE_KEY}`)
 
 function parseStepResult(value: string): StepResult {
   return JSON.parse(value) as StepResult

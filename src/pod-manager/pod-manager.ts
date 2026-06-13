@@ -1,4 +1,4 @@
-import type { QueuedStep, StepResult } from "../types/workflow"
+import type { QueuedStep } from "../types/workflow"
 import { podPool } from "../k8s/pod-pool"
 import { resultQueue } from "../queue/result-queue"
 
@@ -24,6 +24,9 @@ import { resultQueue } from "../queue/result-queue"
  */
 export class PodManager {
   async dispatch(step: QueuedStep): Promise<void> {
+    void step
+    void podPool
+    void resultQueue
     throw new Error("TODO: implement dispatch")
   }
 }

@@ -17,6 +17,10 @@ import { podManager } from "../pod-manager/pod-manager"
  *   3. Push each ready step into the step queue
  *   4. Mark those steps as QUEUED in workflow-store
  *
+ * IMPORTANT: Store the workflow state before enqueueing the first ready step.
+ * Result events can come back quickly, and the result handler must be able
+ * to find the workflow in workflow-store.
+ *
  * start():
  *   - Begin consuming from the result queue
  *   - Begin draining the step queue (send steps to pod manager)
@@ -33,10 +37,17 @@ import { podManager } from "../pod-manager/pod-manager"
  */
 export class Orchestrator {
   async submitWorkflow(workflow: Workflow): Promise<void> {
+    void workflow
+    void getWorkflow
+    void setWorkflow
+    void getReadySteps
+    void stepQueue
     throw new Error("TODO: implement submitWorkflow")
   }
 
   async start(): Promise<void> {
+    void resultQueue
+    void podManager
     throw new Error("TODO: implement start")
   }
 }

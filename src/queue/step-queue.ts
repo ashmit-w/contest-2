@@ -1,7 +1,10 @@
 import type { QueuedStep } from "../types/workflow"
 import { redis } from "./redis-client"
 
-const STEP_QUEUE_KEY = "workflow:step-queue"
+const QUEUE_NAMESPACE = process.env.REDIS_QUEUE_PREFIX || `workflow:${process.pid}`
+const STEP_QUEUE_KEY = `${QUEUE_NAMESPACE}:step-queue`
+
+console.log(`📚 Step queue key: ${STEP_QUEUE_KEY}`)
 
 function parseQueuedStep(value: string): QueuedStep {
   return JSON.parse(value) as QueuedStep
